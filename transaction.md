@@ -49,7 +49,7 @@ ex. 同一条数据有多个客户端在操作，A 读取操作，b 修改操作
 
 ### 更改事务隔离级别
 > global 设置全局默认隔离级别，session只设置这次打开的cmd窗口中的所有事务隔离级别，并在当前这个事务中生效，在打开一个cmd不受影响。如果不设置则为设置本次命令及以后的隔离级别，如果下个事务没有使用set设置会调用默认隔离级别。
->看`read committed ` 和 `read uncommitted`的效果需要关掉autocommit，否则sql语句运行会自动隐式的执行commit
+> 看`read committed ` 和 `read uncommitted`的效果需要关掉autocommit，否则sql语句运行会自动隐式的执行commit
 
 ```mysql
 use test;
@@ -57,11 +57,11 @@ select @lx_isolation
 set [global|session] transaction isolation level read uncommitted | read committed | repeatable | serializable
 ```
 ### 脏读
->a事务读取了b事务未提交的数据，b如果回滚，a事务出现错误
+> a事务读取了b事务未提交的数据，b如果回滚，a事务出现错误
 ![](./zangdu.png)
 
 ### 不可重复读
->a事务先后执行了两个相同的查询，但是结果不一致，因为该数据被b事务修改并提交，导致a事务先后相同查询结果不一致。
+> a事务先后执行了两个相同的查询，但是结果不一致，因为该数据被b事务修改并提交，导致a事务先后相同查询结果不一致。
 ![](./bukechongfudu.png)
 
 ### 幻读
@@ -79,7 +79,7 @@ set [global|session] transaction isolation level read uncommitted | read committ
 
 ### 可串行读
 
-[^footnote] : http://blog.csdn.net/xifeijian/article/details/45229247
-[^footnote] : http://www.limisky.com/126.html
-[^footnote] : https://tech.meituan.com/innodb-lock.html
+[^footnote]: http://blog.csdn.net/xifeijian/article/details/45229247
+[^footnote]: http://www.limisky.com/126.html
+[^footnote]: https://tech.meituan.com/innodb-lock.html
 
