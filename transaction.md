@@ -58,7 +58,7 @@ set [global|session] transaction isolation level read uncommitted | read committ
 ```
 ###脏读
 >a事务读取了b事务未提交的数据，b如果回滚，a事务出现错误
-![](./zangdu.jpg)
+![](./zangdu.png)
 ###不可重复读
 >a事务先后执行了两个相同的查询，但是结果不一致，因为该数据被b事务修改并提交，导致a事务先后相同查询结果不一致。
 ![](./bukechongfudu.png)
