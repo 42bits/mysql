@@ -1,4 +1,3 @@
-[TOC]
 #mysql事务、锁、隔离级别
 ##事务
 >事务
@@ -59,12 +58,15 @@ set [global|session] transaction isolation level read uncommitted | read committ
 ###脏读
 >a事务读取了b事务未提交的数据，b如果回滚，a事务出现错误
 ![](./zangdu.png)
+
 ###不可重复读
 >a事务先后执行了两个相同的查询，但是结果不一致，因为该数据被b事务修改并提交，导致a事务先后相同查询结果不一致。
 ![](./bukechongfudu.png)
+
 ###幻读
 >a事务修改具有摸个相同属性的批量数据，b事务此时写入该属性的一条新数据，a事务查询修改发现有一条数据没有被更改，出现幻觉。
 ![](./huandu.png)
+
 ###数据丢失更新
 >a，b事务同时读取一条数据，a先修改并提交，b也修改（不知道a修改过），b提交后覆盖a事务修改。
 
