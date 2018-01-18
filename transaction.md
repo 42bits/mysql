@@ -129,19 +129,35 @@ set [global|session] transaction isolation level read uncommitted | read committ
 > 读加共享锁，写加排它锁，读写锁互斥。保证所有事务串行执行，完全避免了脏读，不可重复读，幻读，更新丢失。并发很差，如果并发少或者对数据要求及时可靠，可以使用。会出现很多超时现象和锁竞争。
 
 ## innodb引擎加锁机制
+> 事务的隔离级别其实都是对于读数据的定义（其实也可以说定义了写的定义），mvcc让数据变的可以重复读，那么有可能读到的里是历史数据，不是当前数据。对于数据失效性要求高的可能会出现问题。mysql为了提升并发性，减少锁处理时间，引入了快照读，使 `select` 这样的可以不加锁，直接读快照。而 `insert` `update` `delete` 等当前读，为了解决当前读出现幻读引入了next-key锁。
+读可以分为两种：
+
+- 快照读：读取历史数据的方式。
+    `select`
+- 当前读：读取和处理数据库当前版本数据的方式，需要加锁。
+    `select .... for update` `insert` `update` `delete`
 
 ### MVCC
 >  mvcc只是个协议，没有固定的实现规范，每个数据库实现的都可以不一样，mvcc只在repeatable read 和read commited隔离级别有效， innodb的实现算不上真正实现了mvcc，mvcc本质使用乐观锁实现多版本共存，mysql使用了两段锁协议，本质是锁，乐观锁本质是消除锁，两者矛盾，故理想的mvcc是很难实现的。innodb只是借了mvcc名字实现了非堵塞的读而已。
 
 #### 原理
-> 通过时间快照来实现
+> 每次开启一个事务都会生成一个新的事务版本号，且为递增。通过保持时间快照和读取快照来实现当同一个事务相同一个操作始终能看到相同数据，反之意味着同一时刻不同事务看到的数据可能不一致。
 
 #### 特征
+> 每行数据都有一个版本，每次数据更新都同时更新版本号。
+修改是copy出当前数据，各个事务之间不干扰。
+保存时比较版本号，如果成功（commit），则覆盖记录，否则放弃copy修改（rollback）
 
 #### innodb对于mvcc的实现策略
+ > 每行数据有两个单独隐藏的列，当前行创建时的版本号，何时删除的版本号或过期的版本号（可能为空），存的版本号并不是时间戳，而是事务的版本号，每开启一个事务，事务会使用该版本号作为该事务自己的版本号，同时版本号开始递增。当事务进行curd时通过版本号的比较来达到数据版本控制的目的。
+ 
+#### 具体操作（在repeatable read 级别 innodb引擎）
+- `select` 读取创建版本号 <= 当前事务版本号，删除版本号为空或 >当前事务版本号。
+- `insert` 保存当前事务版本号为行的创建版本号
+- `delete` 保存当前事务版本号为行的删除版本号
+- `update` 插入一条记录，同时保存当前事务版本号为行创建版本号，当前事务版本号为行删除版本号。
 
-#### 具体操作
-> 每次开启一个事务都会生成一个新的事务版本号，且为递增。
+> 保存这两个额外的版本号，可大部分操作不需要加锁，减少锁的使用。读数据操作很简单，性能更好，并且也能保证只读取到符合条件的行，也只锁住必要的行。不足之处在于需要额外的空间，以及更多的行检查操作和一些额外的维护工作。
 
 ### GAP（间隙锁）
 - 如果查询字段使用了索引，如多条数据 user_id分别为 10，13，17，19
@@ -154,5 +170,6 @@ set [global|session] transaction isolation level read uncommitted | read committ
  gap防止别的事务新增，
  所以next-key解决了rr级别的隔离出现的幻读问题。
  
-[^footnote1]: http://blog.csdn.net/xifeijian/article/details/45230053
-[^footnote1]: https://tech.meituan.com/innodb-lock.html
+[参考1](http://blog.csdn.net/xifeijian/article/details/45230053)
+[参考2](https://tech.meituan.com/innodb-lock.html)
+[参考3](https://my.oschina.net/xinxingegeya/blog?catalog=457778&temp=1516244652916)
